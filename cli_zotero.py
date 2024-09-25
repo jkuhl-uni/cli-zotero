@@ -308,8 +308,10 @@ class MyConfigParser(ConfigParser):
 
 def main():
     parser = argparse.ArgumentParser(description='Command-line client for Zotero')
-
-    conffile = './cli-zotero.conf'
+    if os.path.exists('./cli-zotero.conf'):
+        conffile = './cli-zotero.conf'
+    else:
+        conffile = '~/.config/cli-zotero.conf'
     cfgfile = MyConfigParser()
     cfgfile.read(os.path.expanduser(conffile))
 
