@@ -65,10 +65,10 @@ def latex_escape(s):
 
 
 def parse_date_guessing(datestr):
-    for fmt in [ "%B %d %Y", "%B %d, %Y", "%B %Y", "%Y", "%Y/%m/%d", "%Y-%m-%d" ]:
+    for fmt in ["%B %d %Y", "%B %d, %Y", "%B %Y", "%Y", "%Y/%m/%d", "%Y-%m-%d"]:
         try:
             return datetime.datetime.strptime(datestr, fmt)
-        except ValueError as e:
+        except ValueError:
             pass
     return datetime.datetime.today()
 
@@ -94,18 +94,15 @@ def get_first_author(item):
 
 
 def make_bibtex_key(item):
-    try:
-        unicode_ = unicode
-    except NameError:
-        unicode_ = str
+    unicode_ = str
     print(item)
     data = item['data']
 
     if 'extra' in data:
         lines = data['extra'].split('\n')
         pat = re.compile('Citation Key:[ \t]*(.*)')
-        for l in lines:
-            m = pat.match(l)
+        for line in lines:
+            m = pat.match(line)
             if m:
                 return m.group(1)
 
@@ -216,7 +213,7 @@ def item_to_bibtex(item):
 
     def try_field(bibtexkey, zoterokeys, item, escape=True, protect=False, conversion=None):
         if not type(zoterokeys) is list:
-            zoterokeys = [ zoterokeys ]
+            zoterokeys = [zoterokeys]
         for key in zoterokeys:
             if (key in item['data']) and (item['data'][key] != ''):
                 value = item['data'][key]
@@ -236,8 +233,8 @@ def item_to_bibtex(item):
         else:
             lines = item['data']['extra'].split('\n')
             pat = re.compile('[dD][oO][iI]:[ \t]*(.*)')
-            for l in lines:
-                m = pat.match(l)
+            for line in lines:
+                m = pat.match(line)
                 if m:
                     return m.group(1)
             return ''
@@ -254,8 +251,8 @@ def item_to_bibtex(item):
         print_key('year', '%d' % parse_date_guessing(item['data']['date']).year)
 
     # Not so traditional types are distinguished by howpublished field for now
-    if item['data']['itemType'] in [ 'blogPost', 'webpage', 'computerProgram' ]:
-        try_field('howpublished', 'url', item, conversion=lambda x : '\\url{%s}' % x)
+    if item['data']['itemType'] in ['blogPost', 'webpage', 'computerProgram']:
+        try_field('howpublished', 'url', item, conversion=lambda x: '\\url{%s}' % x)
     if item['data']['itemType'] == 'presentation':
         if has_field('meetingName', item):
             s = 'Presentation at {%s}' % item['data']['meetingName']
@@ -263,12 +260,12 @@ def item_to_bibtex(item):
                 s = '%s, \\url{%s}' % (s, item['data']['url'])
             print_key('howpublished', s)
 
-    try_field('booktitle', [ 'proceedingsTitle', 'bookTitle' ], item, protect=True)
+    try_field('booktitle', ['proceedingsTitle', 'bookTitle'], item, protect=True)
     try_field('journal', 'publicationTitle', item, protect=True)
     print_key('editor', make_author_list(item['data']['creators'], 'editor'), False)
     try_field('publisher', 'publisher', item)
     try_field('series', 'series', item, protect=True)
-    try_field('number', [ 'seriesNumber', 'issue' ], item)
+    try_field('number', ['seriesNumber', 'issue'], item)
 
     try_field('type', 'thesisType', item)
     try_field('school', 'university', item)
@@ -283,7 +280,7 @@ def item_to_bibtex(item):
     try_field('isbn', 'ISBN', item)
     try_field('issn', 'ISSN', item)
 
-    try_field('pages', 'pages', item, conversion=lambda x : x.replace('-', '--'))
+    try_field('pages', 'pages', item, conversion=lambda x: x.replace('-', '--'))
 
     try_field('url', 'url', item)
     try_field('volume', 'volume', item)
@@ -320,55 +317,55 @@ def main():
     default_id = cfgfile.get_with_default('core', 'id', default_value='')
 
     parser.add_argument('--key',
-            dest='key',
-            required=not cfgfile.has_option('core', 'key'),
-            default=cfgfile.get_with_default('core', 'key'),
-            metavar='API-KEY',
-            help='Zotero API key (https://www.zotero.org/settings/keys)\nOr specify in [core] of configuration file.')
+                        dest='key',
+                        required=not cfgfile.has_option('core', 'key'),
+                        default=cfgfile.get_with_default('core', 'key'),
+                        metavar='API-KEY',
+                        help='Zotero API key (https://www.zotero.org/settings/keys)\nOr specify in [core] of configuration file.')
 
     identity_opts = parser.add_mutually_exclusive_group(required=not default_id)
     identity_opts.add_argument('--group',
-            dest='group',
-            metavar='ID',
-            type=int,
-            help='Group ID (https://www.zotero.org/groups/)')
+                               dest='group',
+                               metavar='ID',
+                               type=int,
+                               help='Group ID (https://www.zotero.org/groups/)')
     identity_opts.add_argument('--user',
-            dest='user',
-            metavar='ID',
-            type=int,
-            help='User ID (https://www.zotero.org/settings/keys)')
+                               dest='user',
+                               metavar='ID',
+                               type=int,
+                               help='User ID (https://www.zotero.org/settings/keys)')
     identity_opts.add_argument('--id',
-            dest='identity',
-            metavar='NAME',
-            help='Identity specified in [identities] in configuration file.')
+                               dest='identity',
+                               metavar='NAME',
+                               help='Identity specified in [identities] in configuration file.')
 
     action_args = parser.add_mutually_exclusive_group(required=True)
     action_args.add_argument('--list-collections',
-            dest='collection_filter',
-            nargs='?',
-            const='',
-            metavar='TITLE',
-            help='List your collections (title partial match)')
+                             dest='collection_filter',
+                             nargs='?',
+                             const='',
+                             metavar='TITLE',
+                             help='List your collections (title partial match)')
     action_args.add_argument('--collection-to-bibtex',
-            dest='collection_to_bibtex',
-            metavar='COLLECTION-ID',
-            help='Export given collection to BibTeX')
+                             dest='collection_to_bibtex',
+                             metavar='COLLECTION-ID',
+                             help='Export given collection to BibTeX')
     action_args.add_argument('--all-to-bibtex',
-            dest='all_to_bibtex',
-            action='store_true',
-            help='Export all items to BibTeX')
+                             dest='all_to_bibtex',
+                             action='store_true',
+                             help='Export all items to BibTeX')
 
     parser.add_argument('--dump',
-            dest='dump_file',
-            metavar='FILENAME',
-            help='Dump retrieved data through pprint to FILENAME')
+                        dest='dump_file',
+                        metavar='FILENAME',
+                        help='Dump retrieved data through pprint to FILENAME')
 
     parser.add_argument('--limit',
-            dest='limit',
-            type=int,
-            default=30,
-            metavar='N',
-            help='Set internal limit of the queries (max 100)')
+                        dest='limit',
+                        type=int,
+                        default=30,
+                        metavar='N',
+                        help='Set internal limit of the queries (max 100)')
 
     cfg = parser.parse_args()
 
@@ -384,7 +381,7 @@ def main():
         if id_line is None:
             sys.exit('Unknown identity "%s".' % cfg.identity)
         id_parts = id_line.split()
-        if len(id_parts) != 2 or (id_parts[0] not in ['user', 'group' ]):
+        if len(id_parts) != 2 or (id_parts[0] not in ['user', 'group']):
             sys.exit('Wrong identity configuration "%s".' % id_line)
         zot = zotero.Zotero(id_parts[1], id_parts[0], cfg.key)
 
@@ -443,6 +440,7 @@ def main():
         sys.exit()
 
     parser.print_help()
+
 
 if __name__ == '__main__':
     main()
