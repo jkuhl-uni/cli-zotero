@@ -19,7 +19,7 @@ from __future__ import print_function
 
 from pyzotero import zotero
 from pprint import pprint
-from six.moves.configparser import SafeConfigParser
+from configparser import ConfigParser
 import sys
 import os
 import re
@@ -98,12 +98,12 @@ def make_bibtex_key(item):
         unicode_ = unicode
     except NameError:
         unicode_ = str
-
+    print(item)
     data = item['data']
 
     if 'extra' in data:
         lines = data['extra'].split('\n')
-        pat = re.compile('bibtex:[ \t]*(.*)')
+        pat = re.compile('Citation Key:[ \t]*(.*)')
         for l in lines:
             m = pat.match(l)
             if m:
@@ -298,9 +298,9 @@ def item_to_bibtex(item):
     return text
 
 
-class MyConfigParser(SafeConfigParser):
+class MyConfigParser(ConfigParser):
     def __init__(self):
-        SafeConfigParser.__init__(self)
+        ConfigParser.__init__(self)
 
     def get_with_default(self, section, option, default_value=None):
         if self.has_option(section, option):
@@ -310,10 +310,11 @@ class MyConfigParser(SafeConfigParser):
 
 
 def main():
-    cfgfile = MyConfigParser()
-    cfgfile.read(os.path.expanduser('~/.config/cli-zotero.conf'))
-
     parser = argparse.ArgumentParser(description='Command-line client for Zotero')
+
+    conffile = './cli-zotero.conf'
+    cfgfile = MyConfigParser()
+    cfgfile.read(os.path.expanduser(conffile))
 
     # allow configfile to store a default id
     default_id = cfgfile.get_with_default('core', 'id', default_value='')
